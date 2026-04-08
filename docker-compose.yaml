@@ -22,6 +22,7 @@ services:
       - MOODLE_DOCKER_DBHOST=db
     volumes:
       - moodledata:/var/www/moodledata
+      - moodle_config:/var/www/html/config.php
     restart: unless-stopped
     depends_on:
       db:
@@ -35,9 +36,10 @@ services:
 
   cron:
     build: ./php
-    command: sh -c "while true; do php /var/www/html/admin/cli/cron.php; sleep 60; done"
+    command: sh -c "while true; do [ -f /var/www/html/config.php ] && php /var/www/html/admin/cli/cron.php || echo 'Waiting for Moodle installation...'; sleep 60; done"
     volumes:
       - moodledata:/var/www/moodledata
+      - moodle_config:/var/www/html/config.php
     restart: unless-stopped
     depends_on:
       - db
@@ -48,3 +50,5 @@ volumes:
     name: moodle_db_data
   moodledata:
     name: moodle_data
+  moodle_config:
+    name: moodle_config_file
