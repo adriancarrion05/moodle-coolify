@@ -9,8 +9,17 @@ done
 echo "¡Base de datos lista!"
 
 # Instalar Moodle si el config.php no existe todavía (ahora como archivo real)
-if [ ! -s "/config_mount/config.php" ]; then
-    echo "Instalando Moodle (esto solo sucederá la primera vez)..."
+if [ ! -s "/config_mount/config.php" ] && [ "$1" = "php-fpm" ]; then
+    echo "Generando configuración para Moodle..."
+
+    EXTRA_ARGS=""
+    TABLE_COUNT=$(php -r "try { \$db = new PDO('mysql:host=db;dbname=' . getenv('MYSQL_DATABASE') . ';charset=utf8', getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD')); \$stmt = \$db->query('SHOW TABLES'); echo \$stmt->rowCount(); } catch (Exception \$e) { echo 0; }")
+    if [ "$TABLE_COUNT" -gt 0 ]; then
+        echo "✅ La base de datos ya tiene tablas. Se generará el archivo config.php reutilizando la base de datos existente (--skip-database)."
+        EXTRA_ARGS="--skip-database"
+    else
+        echo "⚠️ Base de datos en blanco. Instalando las tablas de Moodle desde cero..."
+    fi
 
     php /var/www/html/admin/cli/install.php \
         --lang=es \
@@ -27,8 +36,9 @@ if [ ! -s "/config_mount/config.php" ]; then
         --adminpass="ContraseñaAdminFuerte1!" \
         --adminemail="admin@tudominio.com" \
         --non-interactive \
-        --agree-license
-    
+        --agree-license \
+        $EXTRA_ARGS
+
     # Hacer una copia persistente al volumen seguro del host (porque el HTML es volátil entre builds)
     cp /var/www/html/config.php /config_mount/config.php
     
@@ -36,7 +46,7 @@ if [ ! -s "/config_mount/config.php" ]; then
     chown www-data:www-data /config_mount/config.php
     chmod 644 /config_mount/config.php
     echo "Instalación completada y copia guardada."
-else
+elif [ -s "/config_mount/config.php" ]; then
     echo "Moodle ya está instalado. Restaurando config.php desde persistencia..."
     cp /config_mount/config.php /var/www/html/config.php
     chown www-data:www-data /var/www/html/config.php
