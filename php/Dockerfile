@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 # Descargar Moodle directamente dentro de la imagen (Versión 5.0)
 RUN wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz -O moodle.tgz && \
     tar -zxvf moodle.tgz --strip-components=1 -C /var/www/html && \
-    rm moodle.tgz
+    rm moodle.tgz || (echo "Moodle download failed." && exit 1)
 
 # Configurar permisos seguros (evitar escritura global)
 RUN chown -R www-data:www-data /var/www/html \
