@@ -11,6 +11,11 @@ echo "¡Base de datos lista!"
 # Instalar Moodle si el config.php no existe todavía (ahora como archivo real)
 if [ ! -s "/config_mount/config.php" ]; then
     echo "Instalando Moodle (esto solo sucederá la primera vez)..."
+    
+    # IMPORTANTE: Si la DB ya tenía tablas, forzamos un Drop limpiando el camino
+    # o de otra forma Moodle se negará a instalar.
+    php -r "\$db = new PDO('mysql:host=db;dbname=' . getenv('MYSQL_DATABASE') . ';charset=utf8', getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD')); \$db->query('DROP TABLE IF EXISTS mdl_config');"
+    
     php /var/www/html/admin/cli/install.php \
         --lang=es \
         --wwwroot="$SERVICE_URL_NGINX" \
@@ -26,7 +31,8 @@ if [ ! -s "/config_mount/config.php" ]; then
         --adminpass="ContraseñaAdminFuerte1!" \
         --adminemail="admin@tudominio.com" \
         --non-interactive \
-        --agree-license
+        --agree-license \
+        --skip-database
         
     # Hacer una copia persistente al volumen seguro del host (porque el HTML es volátil entre builds)
     cp /var/www/html/config.php /config_mount/config.php
