@@ -7,7 +7,8 @@ while ! php -r "try { new PDO('mysql:host=db;dbname=' . getenv('MYSQL_DATABASE')
     sleep 3
 done
 echo "¡Base de datos lista!"
-
+# Dar permisos correctos al iniciar el contenedor
+chown -R www-data:www-data /var/www/moodledata
 # Instalar Moodle si el config.php no existe todavía (ahora como archivo real)
 if [ ! -s "/config_mount/config.php" ] && [ "$1" = "php-fpm" ]; then
     echo "Generando configuración para Moodle..."
@@ -32,8 +33,8 @@ if [ ! -s "/config_mount/config.php" ] && [ "$1" = "php-fpm" ]; then
         --dbpass="$MYSQL_PASSWORD" \
         --fullname="Plataforma Moodle" \
         --shortname="Moodle" \
-        --adminuser="admin" \
-        --adminpass="ContraseñaAdminFuerte1!" \
+        --adminuser="${MOODLE_ADMIN_USER:-admin}" \
+        --adminpass="${MOODLE_ADMIN_PASS:-password123}" \
         --adminemail="admin@tudominio.com" \
         --non-interactive \
         --agree-license \
