@@ -4,7 +4,7 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip libpng-dev libicu-dev libxml2-dev cron wget \
     libcurl4-openssl-dev libsodium-dev libonig-dev \
-    && docker-php-ext-install mysqli pdo_mysql zip gd intl xmlrpc soap opcache exif curl sodium mbstring \
+    && docker-php-ext-install mysqli pdo_mysql zip gd intl soap opcache exif sodium mbstring \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Descargar Moodle directamente dentro de la imagen (Versión 5.0)
