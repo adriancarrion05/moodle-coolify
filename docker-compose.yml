@@ -22,6 +22,7 @@ services:
       - MOODLE_DOCKER_DBHOST=db
     volumes:
       - moodledata:/var/www/moodledata
+      - moodle_config:/var/www/html/config.php
     restart: unless-stopped
     depends_on:
       db:
@@ -48,3 +49,5 @@ volumes:
     name: moodle_db_data
   moodledata:
     name: moodle_data
+  moodle_config:
+    name: moodle_config_file
