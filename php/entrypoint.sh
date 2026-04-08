@@ -8,8 +8,15 @@ while ! php -r "try { new PDO('mysql:host=db;dbname=' . getenv('MYSQL_DATABASE')
 done
 echo "¡Base de datos lista!"
 
-# Instalar Moodle si el config.php no existe todavía
-if [ ! -f "/var/www/html/config.php" ]; then
+# Docker crea los volúmenes de montaje directo como directorios si el archivo no existía en el host
+# Revisamos si config.php es un directorio y lo eliminamos para permitir que Moodle lo cree como archivo
+if [ -d "/var/www/html/config.php" ]; then
+    echo "Corrigiendo montaje de Docker (eliminando directorio config.php)..."
+    rm -rf /var/www/html/config.php
+fi
+
+# Instalar Moodle si el config.php no existe todavía (ahora como archivo real)
+if [ ! -s "/var/www/html/config.php" ]; then
     echo "Instalando Moodle (esto solo sucederá la primera vez)..."
     php /var/www/html/admin/cli/install.php \
         --lang=es \
