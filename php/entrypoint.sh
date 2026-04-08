@@ -53,5 +53,15 @@ elif [ -s "/config_mount/config.php" ]; then
     chmod 644 /var/www/html/config.php
 fi
 
+# Solucionar problema de ERR_TOO_MANY_REDIRECTS por el proxy inverso de Coolify
+if [ -f "/var/www/html/config.php" ] && [ "$1" = "php-fpm" ]; then
+    if ! grep -q "sslproxy" /var/www/html/config.php; then
+        echo "Añadiendo configuración de SSL Proxy a config.php..."
+        sed -i "/require_once/i \$CFG->sslproxy = true;\n\$CFG->reverseproxy = true;\n" /var/www/html/config.php
+        # Volver a guardar el cambio en el volumen persistente
+        cp /var/www/html/config.php /config_mount/config.php
+    fi
+fi
+
 # Arrancar el proceso principal de PHP-FPM o el comando original (ej: cron)
 exec "$@"
