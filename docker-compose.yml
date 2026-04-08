@@ -1,0 +1,50 @@
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      # Coolify inyectará estas variables desde su panel
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  php:
+    build: ./php
+    environment:
+      - MOODLE_DOCKER_DBHOST=db
+    volumes:
+      - moodledata:/var/www/moodledata
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    depends_on:
+      - php
+
+  cron:
+    build: ./php
+    command: sh -c "while true; do php /var/www/html/admin/cli/cron.php; sleep 60; done"
+    volumes:
+      - moodledata:/var/www/moodledata
+    restart: unless-stopped
+    depends_on:
+      - db
+      - php
+
+volumes:
+  db_data:
+    name: moodle_db_data
+  moodledata:
+    name: moodle_data
