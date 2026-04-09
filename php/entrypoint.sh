@@ -136,11 +136,11 @@ fi
 # ─────────────────────────────────────────────
 if [ -f "/var/www/html/config.php" ]; then
     chown www-data:www-data /var/www/html/config.php 2>/dev/null || true
-    chmod 640 /var/www/html/config.php 2>/dev/null || true
+    chmod 644 /var/www/html/config.php 2>/dev/null || true
 fi
 if [ -f "/config_mount/config.php" ]; then
     chown www-data:www-data /config_mount/config.php 2>/dev/null || true
-    chmod 640 /config_mount/config.php 2>/dev/null || true
+    chmod 644 /config_mount/config.php 2>/dev/null || true
 fi
 
 # ─────────────────────────────────────────────
@@ -149,12 +149,12 @@ fi
 if [ "$1" = "cron-loop" ]; then
     echo "🕐 Iniciando loop de cron de Moodle..."
     while true; do
-        if [ -f "/var/www/html/config.php" ]; then
+        if [ -f "/var/www/html/config.php" ] && [ -r "/var/www/html/config.php" ]; then
             su -s /bin/bash www-data -c 'php /var/www/html/admin/cli/cron.php' \
                 && echo "✅ Cron ejecutado: $(date)" \
                 || echo "⚠️  Error en cron: $(date)"
         else
-            echo "⏳ Esperando instalación de Moodle para ejecutar cron... $(date)"
+            echo "⏳ Esperando config.php legible para ejecutar cron... $(date)"
         fi
         sleep 60
     done

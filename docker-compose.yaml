@@ -29,7 +29,7 @@ services:
     volumes:
       - moodledata:/var/www/moodledata
       - moodle_config:/config_mount
-      - moodle_html:/var/www/html   # ← volumen compartido con nginx
+      - moodle_html:/var/www/html
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -38,11 +38,10 @@ services:
         condition: service_healthy
 
   nginx:
-    image: nginx:1.25-alpine        # ← imagen directa, sin build propio
+    build: ./nginx          # ← build propio, no imagen directa
     restart: unless-stopped
     volumes:
-      - moodle_html:/var/www/html   # ← mismos archivos que php
-      - ./nginx/moodle.conf:/etc/nginx/conf.d/moodle.conf:ro
+      - moodle_html:/var/www/html   # archivos de Moodle compartidos
     security_opt:
       - no-new-privileges:true
     depends_on:
@@ -56,6 +55,8 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - SERVICE_URL_NGINX=${SERVICE_URL_NGINX}
+      - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}
     volumes:
       - moodledata:/var/www/moodledata
       - moodle_config:/config_mount
@@ -77,4 +78,4 @@ volumes:
   moodle_config:
     name: moodle_config_file
   moodle_html:
-    name: moodle_html_files    # ← nuevo volumen compartido
+    name: moodle_html_files
