@@ -24,44 +24,42 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - SERVICE_URL_NGINX=${SERVICE_URL_NGINX}
-      - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
-      - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}  # Sin fallback — forzar definición explícita
+      - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER:-admin}
+      - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}
     volumes:
       - moodledata:/var/www/moodledata
       - moodle_config:/config_mount
+      - moodle_html:/var/www/html   # ← volumen compartido con nginx
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
 
   nginx:
-    build: ./nginx
+    image: nginx:1.25-alpine        # ← imagen directa, sin build propio
     restart: unless-stopped
-    # ← Eliminado el volumen moodle_config: Nginx no necesita config.php
+    volumes:
+      - moodle_html:/var/www/html   # ← mismos archivos que php
+      - ./nginx/moodle.conf:/etc/nginx/conf.d/moodle.conf:ro
     security_opt:
       - no-new-privileges:true
     depends_on:
-      php:
-        condition: service_healthy
+      - php
 
   cron:
     build: ./php
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
-    command: ["cron-loop"]  # ← Manejado limpiamente en entrypoint.sh
-    volumes:
-      - moodledata:/var/www/moodledata
-      - moodle_config:/config_mount
+    command: ["cron-loop"]
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - moodledata:/var/www/moodledata
+      - moodle_config:/config_mount
+      - moodle_html:/var/www/html
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -69,7 +67,7 @@ services:
       db:
         condition: service_healthy
       php:
-        condition: service_healthy
+        condition: service_started
 
 volumes:
   db_data:
@@ -78,3 +76,5 @@ volumes:
     name: moodle_data
   moodle_config:
     name: moodle_config_file
+  moodle_html:
+    name: moodle_html_files    # ← nuevo volumen compartido
