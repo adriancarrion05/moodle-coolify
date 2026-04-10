@@ -10,13 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 # Descargar Moodle con verificación de integridad SHA256 (Versión 5.0.1)
 # Actualizar el checksum desde: https://download.moodle.org/releases/latest/
-RUN wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz \
-        -O moodle.tgz && \
-    wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz.sha256 \
-        -O moodle.tgz.sha256 && \
-    sha256sum -c moodle.tgz.sha256 || (echo "❌ ERROR: Checksum de Moodle no coincide. Abortando." && exit 1) && \
-    tar -zxf moodle.tgz --strip-components=1 -C /var/www/html && \
-    rm moodle.tgz moodle.tgz.sha256
+RUN wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz && \
+    wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz.sha256 && \
+    sha256sum -c moodle-latest-501.tgz.sha256 || (echo "❌ ERROR: Checksum de Moodle no coincide. Abortando." && exit 1) && \
+    tar -zxf moodle-latest-501.tgz --strip-components=1 -C /var/www/html && \
+    rm moodle-latest-501.tgz moodle-latest-501.tgz.sha256
 
 # Configurar permisos seguros (evitar escritura global)
 RUN chown -R www-data:www-data /var/www/html \
