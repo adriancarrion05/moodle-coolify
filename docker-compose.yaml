@@ -21,7 +21,6 @@ services:
 
   php:
     build: ./php
-    user: "33:33"
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -60,7 +59,6 @@ services:
 
   cron:
     build: ./php
-    user: "33:33"
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
     command: ["cron-loop"]
     environment:

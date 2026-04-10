@@ -27,8 +27,5 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www/html
 
-# Correr como www-data para minimizar impacto de un posible RCE
-USER www-data
-
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
