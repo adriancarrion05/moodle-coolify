@@ -57,32 +57,6 @@ services:
     depends_on:
       - php
 
-  cron:
-    build: ./php
-    entrypoint: ["/usr/local/bin/entrypoint.sh"]
-    command: ["cron-loop"]
-    environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - SERVICE_URL_NGINX=${SERVICE_URL_NGINX}
-      - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}
-      - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
-    volumes:
-      - moodledata:/var/www/moodledata
-      - moodle_config:/config_mount
-      - moodle_html:/var/www/html
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - backend
-    depends_on:
-      db:
-        condition: service_healthy
-      php:
-        condition: service_started
-
 volumes:
   db_data:
     name: moodle_db_data

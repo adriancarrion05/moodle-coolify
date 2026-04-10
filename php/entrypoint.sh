@@ -151,23 +151,6 @@ if [ -f "/config_mount/config.php" ]; then
 fi
 
 # ─────────────────────────────────────────────
-# Modo cron (comando alternativo)
-# ─────────────────────────────────────────────
-if [ "$1" = "cron-loop" ]; then
-    echo "🕐 Iniciando loop de cron de Moodle..."
-    while true; do
-        if [ -f "/var/www/html/config.php" ] && [ -r "/var/www/html/config.php" ]; then
-            su -s /bin/bash www-data -c 'php /var/www/html/admin/cli/cron.php' \
-                && echo "✅ Cron ejecutado: $(date)" \
-                || echo "⚠️  Error en cron: $(date)"
-        else
-            echo "⏳ Esperando config.php legible para ejecutar cron... $(date)"
-        fi
-        sleep 60
-    done
-fi
-
-# ─────────────────────────────────────────────
 # Arrancar proceso principal (php-fpm u otro)
 # ─────────────────────────────────────────────
 echo "🚀 Arrancando: $@"
