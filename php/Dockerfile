@@ -1,5 +1,5 @@
 # Imagen base pinneada por digest para builds reproducibles y seguros
-FROM php:8.3-fpm@sha256:e5b0af74f24b82e74f57478e6e8ffd6bd1748ded12a9f5e7fc15c5543f2f2c8e
+FROM php:8.3-fpm
 
 # Instalar dependencias esenciales y de seguridad
 RUN apt-get update && apt-get install -y \
