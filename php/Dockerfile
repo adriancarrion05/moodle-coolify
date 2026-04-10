@@ -1,16 +1,22 @@
-FROM php:8.3-fpm
+# Imagen base pinneada por digest para builds reproducibles y seguros
+FROM php:8.3-fpm@sha256:e5b0af74f24b82e74f57478e6e8ffd6bd1748ded12a9f5e7fc15c5543f2f2c8e
 
 # Instalar dependencias esenciales y de seguridad
 RUN apt-get update && apt-get install -y \
-    libzip-dev zip unzip libpng-dev libicu-dev libxml2-dev cron wget \
+    libzip-dev zip unzip libpng-dev libicu-dev libxml2-dev wget \
     libcurl4-openssl-dev libsodium-dev libonig-dev \
     && docker-php-ext-install mysqli pdo_mysql zip gd intl soap opcache exif sodium mbstring \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Descargar Moodle directamente dentro de la imagen (Versión 5.0)
-RUN wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz -O moodle.tgz && \
-    tar -zxvf moodle.tgz --strip-components=1 -C /var/www/html && \
-    rm moodle.tgz || (echo "Moodle download failed." && exit 1)
+# Descargar Moodle con verificación de integridad SHA256 (Versión 5.0.1)
+# Actualizar el checksum desde: https://download.moodle.org/releases/latest/
+RUN wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz \
+        -O moodle.tgz && \
+    wget https://download.moodle.org/download.php/direct/stable501/moodle-latest-501.tgz.sha256 \
+        -O moodle.tgz.sha256 && \
+    sha256sum -c moodle.tgz.sha256 || (echo "❌ ERROR: Checksum de Moodle no coincide. Abortando." && exit 1) && \
+    tar -zxf moodle.tgz --strip-components=1 -C /var/www/html && \
+    rm moodle.tgz moodle.tgz.sha256
 
 # Configurar permisos seguros (evitar escritura global)
 RUN chown -R www-data:www-data /var/www/html \
@@ -23,6 +29,8 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www/html
 
-# Establecer la ejecución mediante nuestro script
+# Correr como www-data para minimizar impacto de un posible RCE
+USER www-data
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]

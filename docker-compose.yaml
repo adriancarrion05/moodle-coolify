@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -19,6 +21,7 @@ services:
 
   php:
     build: ./php
+    user: "33:33"
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -26,6 +29,7 @@ services:
       - SERVICE_URL_NGINX=${SERVICE_URL_NGINX}
       - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER:-admin}
       - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}
+      - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
     volumes:
       - moodledata:/var/www/moodledata
       - moodle_config:/config_mount
@@ -33,22 +37,30 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    # php en ambas redes: habla con nginx (frontend) y con db (backend)
+    networks:
+      - frontend
+      - backend
     depends_on:
       db:
         condition: service_healthy
 
   nginx:
-    build: ./nginx          # ← build propio, no imagen directa
+    build: ./nginx
     restart: unless-stopped
     volumes:
-      - moodle_html:/var/www/html   # archivos de Moodle compartidos
+      - moodle_html:/var/www/html
     security_opt:
       - no-new-privileges:true
+    # nginx solo en red frontend: no tiene acceso directo a la base de datos
+    networks:
+      - frontend
     depends_on:
       - php
 
   cron:
     build: ./php
+    user: "33:33"
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
     command: ["cron-loop"]
     environment:
@@ -57,6 +69,7 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - SERVICE_URL_NGINX=${SERVICE_URL_NGINX}
       - MOODLE_ADMIN_PASS=${MOODLE_ADMIN_PASS}
+      - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
     volumes:
       - moodledata:/var/www/moodledata
       - moodle_config:/config_mount
@@ -64,6 +77,8 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    networks:
+      - backend
     depends_on:
       db:
         condition: service_healthy
@@ -79,3 +94,13 @@ volumes:
     name: moodle_config_file
   moodle_html:
     name: moodle_html_files
+
+# Redes segmentadas:
+#   frontend → nginx ↔ php  (tráfico HTTP/FastCGI)
+#   backend  → php  ↔ db    (tráfico MySQL, aislado de nginx)
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true   # la red de base de datos no tiene salida a internet

@@ -19,6 +19,12 @@ if [ "$1" = "php-fpm" ] && [ -z "$SERVICE_URL_NGINX" ]; then
     exit 1
 fi
 
+# MOODLE_ADMIN_EMAIL es obligatoria para recibir alertas de seguridad
+if [ "$1" = "php-fpm" ] && [ -z "$MOODLE_ADMIN_EMAIL" ]; then
+    echo "❌ ERROR: MOODLE_ADMIN_EMAIL no está definida. Es necesaria para recibir notificaciones críticas de seguridad de Moodle."
+    exit 1
+fi
+
 # ─────────────────────────────────────────────
 # Esperar a que la base de datos esté lista
 # ─────────────────────────────────────────────
@@ -93,12 +99,12 @@ if [ ! -s "/config_mount/config.php" ] && [ "$1" = "php-fpm" ]; then
         --shortname="Moodle" \
         --adminuser="${MOODLE_ADMIN_USER:-admin}" \
         --adminpass="$MOODLE_ADMIN_PASS" \
-        --adminemail="${MOODLE_ADMIN_EMAIL:-admin@tudominio.com}" \
+        --adminemail="$MOODLE_ADMIN_EMAIL" \
         --non-interactive \
         --agree-license \
         $EXTRA_ARGS
 
-    # Guardar config.php en el volumen persistente
+    # Guardar config.php en el volumen persistente con permisos restringidos
     cp /var/www/html/config.php /config_mount/config.php
     chown www-data:www-data /config_mount/config.php
     chmod 640 /config_mount/config.php
@@ -127,20 +133,21 @@ if [ -f "/var/www/html/config.php" ] && [ "$1" = "php-fpm" ]; then
         sed -i "/\$CFG->reverseproxy = true;/d" /var/www/html/config.php
     fi
 
-    # Sincronizar cambios al volumen persistente
+    # Sincronizar cambios al volumen persistente con permisos restringidos
     cp /var/www/html/config.php /config_mount/config.php
 fi
 
 # ─────────────────────────────────────────────
 # Permisos finales sobre config.php
+# IMPORTANTE: 640 (no 644) — solo www-data puede leer las credenciales
 # ─────────────────────────────────────────────
 if [ -f "/var/www/html/config.php" ]; then
     chown www-data:www-data /var/www/html/config.php 2>/dev/null || true
-    chmod 644 /var/www/html/config.php 2>/dev/null || true
+    chmod 640 /var/www/html/config.php 2>/dev/null || true
 fi
 if [ -f "/config_mount/config.php" ]; then
     chown www-data:www-data /config_mount/config.php 2>/dev/null || true
-    chmod 644 /config_mount/config.php 2>/dev/null || true
+    chmod 640 /config_mount/config.php 2>/dev/null || true
 fi
 
 # ─────────────────────────────────────────────
