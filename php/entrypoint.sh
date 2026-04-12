@@ -127,12 +127,6 @@ if [ -f "/var/www/html/config.php" ] && [ "$1" = "php-fpm" ]; then
         sed -i "/require_once/i \$CFG->sslproxy = true;" /var/www/html/config.php
     fi
 
-    # Eliminar reverseproxy si está presente (causa bloqueos de login en Coolify)
-    if grep -q "\$CFG->reverseproxy = true;" /var/www/html/config.php; then
-        echo "🔧 Eliminando \$CFG->reverseproxy para evitar bloqueos de sesión..."
-        sed -i "/\$CFG->reverseproxy = true;/d" /var/www/html/config.php
-    fi
-
     # Sincronizar cambios al volumen persistente con permisos restringidos
     cp /var/www/html/config.php /config_mount/config.php
 fi
