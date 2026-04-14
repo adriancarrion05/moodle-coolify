@@ -118,13 +118,22 @@ elif [ -s "/config_mount/config.php" ]; then
 fi
 
 # ─────────────────────────────────────────────
-# Configuración SSL Proxy para Coolify
-# (evita ERR_TOO_MANY_REDIRECTS con proxy inverso)
+# Configuración SSL Proxy y Seguridad para Moodle
+# (evita ERR_TOO_MANY_REDIRECTS y bloquea cron web)
 # ─────────────────────────────────────────────
 if [ -f "/var/www/html/config.php" ] && [ "$1" = "php-fpm" ]; then
+    echo "🔒 Verificando configuraciones críticas en config.php..."
+    
+    # 1. Añadir configuración de SSL Proxy
     if ! grep -q "sslproxy" /var/www/html/config.php; then
-        echo "🔒 Añadiendo configuración de SSL Proxy para Coolify..."
+        echo "   -> Inyectando \$CFG->sslproxy = true;"
         sed -i "/require_once/i \$CFG->sslproxy = true;" /var/www/html/config.php
+    fi
+
+    # 2. Bloquear el cron vía web para evitar sobrecargas y errores 504
+    if ! grep -q "cronclionly" /var/www/html/config.php; then
+        echo "   -> Inyectando \$CFG->cronclionly = 1;"
+        sed -i "/require_once/i \$CFG->cronclionly = 1;" /var/www/html/config.php
     fi
 
     # Sincronizar cambios al volumen persistente con permisos restringidos

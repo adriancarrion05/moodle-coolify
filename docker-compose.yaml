@@ -40,6 +40,11 @@ services:
     networks:
       - frontend
       - backend
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on:
       db:
         condition: service_healthy
